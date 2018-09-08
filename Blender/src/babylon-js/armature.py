@@ -75,6 +75,7 @@ class Skeleton:
         self.name = bpySkeleton.name
         self.id = id
         self.bones = []
+        self.editModeBones = []
 
         for bone in bpySkeleton.pose.bones:
             if ignoreIKBones and Skeleton.isIkName(bone.name):
@@ -110,7 +111,9 @@ class Skeleton:
         bpy.ops.object.mode_set(mode='EDIT')
 
         # you need to access edit_bones from skeleton.data not skeleton.pose when in edit mode
-        for editBone in bpySkeleton.data.edit_bones:
+        self.editModeBones = bpySkeleton.data.edit_bones
+        Logger.log("Number of edit mode bones = {}".format(len(self.editModeBones)))
+        for editBone in self.editModeBones:
             for myBoneObj in self.bones:
                 if editBone.name == myBoneObj.name:
                     myBoneObj.set_rest_pose(editBone)
@@ -124,23 +127,23 @@ class Skeleton:
     def getDimensions(self):
         highest = Vector((-10000, -10000, -10000))
         lowest  = Vector(( 10000,  10000,  10000))
+        if len(self.editModeBones) > 0:
+            for bone in self.bones:
+                if highest.x < bone.restHead.x: highest.x = bone.restHead.x
+                if highest.y < bone.restHead.y: highest.y = bone.restHead.y
+                if highest.z < bone.restHead.z: highest.z = bone.restHead.z
 
-        for bone in self.bones:
-            if highest.x < bone.restHead.x: highest.x = bone.restHead.x
-            if highest.y < bone.restHead.y: highest.y = bone.restHead.y
-            if highest.z < bone.restHead.z: highest.z = bone.restHead.z
+                if highest.x < bone.restTail.x: highest.x = bone.restTail.x
+                if highest.y < bone.restTail.y: highest.y = bone.restTail.y
+                if highest.z < bone.restTail.z: highest.z = bone.restTail.z
 
-            if highest.x < bone.restTail.x: highest.x = bone.restTail.x
-            if highest.y < bone.restTail.y: highest.y = bone.restTail.y
-            if highest.z < bone.restTail.z: highest.z = bone.restTail.z
+                if lowest .x > bone.restHead.x: lowest .x = bone.restHead.x
+                if lowest .y > bone.restHead.y: lowest .y = bone.restHead.y
+                if lowest .z > bone.restHead.z: lowest .z = bone.restHead.z
 
-            if lowest .x > bone.restHead.x: lowest .x = bone.restHead.x
-            if lowest .y > bone.restHead.y: lowest .y = bone.restHead.y
-            if lowest .z > bone.restHead.z: lowest .z = bone.restHead.z
-
-            if lowest .x > bone.restTail.x: lowest .x = bone.restTail.x
-            if lowest .y > bone.restTail.y: lowest .y = bone.restTail.y
-            if lowest .z > bone.restTail.z: lowest .z = bone.restTail.z
+                if lowest .x > bone.restTail.x: lowest .x = bone.restTail.x
+                if lowest .y > bone.restTail.y: lowest .y = bone.restTail.y
+                if lowest .z > bone.restTail.z: lowest .z = bone.restTail.z
 
         return Vector((highest.x - lowest.x, highest.y - lowest.y, highest.z - lowest.z))
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -169,12 +172,13 @@ class Skeleton:
 
         file_handler.write(',"bones":[')
         first = True
-        for bone in self.bones:
-            if first != True:
-                file_handler.write(',')
-            first = False
+        if len(self.editModeBones) > 0:
+            for bone in self.bones:
+                if first != True:
+                    file_handler.write(',')
+                first = False
 
-            bone.to_scene_file(file_handler)
+                bone.to_scene_file(file_handler)
 
         file_handler.write(']')
 
