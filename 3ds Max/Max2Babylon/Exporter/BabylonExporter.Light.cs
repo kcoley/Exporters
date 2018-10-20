@@ -27,6 +27,13 @@ namespace Max2Babylon
 
         private bool IsLightExportable(IIGameNode lightNode)
         {
+            var exportLightProperty = lightNode.IGameObject.IPropertyContainer.QueryProperty("babylonLight");
+            bool shouldExportLight = exportLightProperty != null ? exportLightProperty.GetBoolValue() : true;
+            if (!shouldExportLight)
+            {
+                RaiseMessage($"Light {lightNode.Name} has been excluded from export.");
+                return false;
+            }
             return IsNodeExportable(lightNode);
         }
 

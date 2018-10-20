@@ -48,6 +48,9 @@ namespace Max2Babylon
                         outerConeAngle = babylonLight.angle
                     };
                     break;
+                default:
+                    RaiseError($"Unsupported light type {light.type} for glTF");
+                    throw new System.Exception($"Unsupported light type {light.type} for glTF");
             }
 
             Dictionary<string, List<GLTFLight>> KHR_lightsExtension;

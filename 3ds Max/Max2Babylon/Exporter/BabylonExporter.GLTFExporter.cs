@@ -319,25 +319,13 @@ namespace Max2Babylon
                 }
                 else if (type == typeof(BabylonLight) || type.IsSubclassOf(typeof(BabylonLight)))
                 {
-                    if(((BabylonLight)babylonNode).type != 3)
+                    if (((BabylonLight)babylonNode).type == 3) // ambient light
+                    {
+                        RaiseMessage($"Ambient light {babylonNode.name} is not supported in glTF export");
+                    }
+                    else
                     {
                         ExportLight(ref gltfNode, babylonNode as BabylonLight, gltf, gltfParentNode, babylonScene);
-                    }
-                    else //Ambiant light are attached to the scene. It was previously exported as node to preserve the hierarchy and its children
-                    {
-                        RaiseMessage($"GLTFExporter.Light | Export light named: {babylonNode.name}", 1);
-                        // new light in the scene extensions
-                        GLTFLight light = new GLTFLight
-                        {
-                            light = AddLightExtension(ref gltf, babylonNode as BabylonLight)
-                        };
-
-                        int sceneIndex = (int)gltf.scene;
-                        if (gltf.scenes[sceneIndex].extensions.ContainsKey(KHR_lights_punctuals))
-                        {
-                            RaiseWarning($"Only 1 ambient light can be referenced per scene. {babylonNode.name} has overwritten the previous one.", 2);
-                        }
-                        gltf.scenes[sceneIndex].extensions[KHR_lights_punctuals] = light;
                     }
                 }
                 else
@@ -346,20 +334,22 @@ namespace Max2Babylon
                 }
 
                 CheckCancelled();
-
-                // export its tag
-                if(babylonNode.tag != null && babylonNode.tag != "")
+                if (gltfNode != null)
                 {
-                    if (gltfNode.extras == null)
+                    // export its tag
+                    if (babylonNode.tag != null && babylonNode.tag != "")
                     {
-                        gltfNode.extras = new Dictionary<string, object>();
+                        if (gltfNode.extras == null)
+                        {
+                            gltfNode.extras = new Dictionary<string, object>();
+                        }
+                        gltfNode.extras["tag"] = babylonNode.tag;
                     }
-                    gltfNode.extras["tag"] = babylonNode.tag;
-                }
 
-                // ...export its children
-                List<BabylonNode> babylonDescendants = getDescendants(babylonNode);
-                babylonDescendants.ForEach(descendant => exportNodeRec(descendant, gltf, babylonScene, gltfNode));
+                    // ...export its children
+                    List<BabylonNode> babylonDescendants = getDescendants(babylonNode);
+                    babylonDescendants.ForEach(descendant => exportNodeRec(descendant, gltf, babylonScene, gltfNode));
+                }
             }
         }
 
@@ -460,7 +450,6 @@ namespace Max2Babylon
             }
             return chunkList.ToArray();
         }
-
 
         /// <summary>
         /// Create a gltf node from the babylon node.
