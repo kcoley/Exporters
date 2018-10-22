@@ -305,52 +305,52 @@ namespace Max2Babylon
         {
             var type = babylonNode.GetType();
 
-            GLTFNode gltfNode = ExportNode(babylonNode, gltf, babylonScene, gltfParentNode);
-
-            if (gltfNode != null)
+            if ((type == typeof(BabylonLight) || type.IsSubclassOf(typeof(BabylonLight))) && (((BabylonLight)babylonNode).type == 3)) {
+                // here to handle generated default ambient light
+                RaiseMessage($"Ambient light {babylonNode.name} is not supported in glTF export");
+            }
+            else
             {
-                if (type == typeof(BabylonAbstractMesh) || type.IsSubclassOf(typeof(BabylonAbstractMesh)))
+                GLTFNode gltfNode = ExportNode(babylonNode, gltf, babylonScene, gltfParentNode);
+
+                if (gltfNode != null)
                 {
-                    gltfNode = ExportAbstractMesh(ref gltfNode, babylonNode as BabylonAbstractMesh, gltf, gltfParentNode, babylonScene);
-                }
-                else if (type == typeof(BabylonCamera))
-                {
-                    GLTFCamera gltfCamera = ExportCamera(ref gltfNode, babylonNode as BabylonCamera, gltf, gltfParentNode);
-                }
-                else if (type == typeof(BabylonLight) || type.IsSubclassOf(typeof(BabylonLight)))
-                {
-                    if (((BabylonLight)babylonNode).type == 3) // ambient light
+                    if (type == typeof(BabylonAbstractMesh) || type.IsSubclassOf(typeof(BabylonAbstractMesh)))
                     {
-                        RaiseMessage($"Ambient light {babylonNode.name} is not supported in glTF export");
+                        gltfNode = ExportAbstractMesh(ref gltfNode, babylonNode as BabylonAbstractMesh, gltf, gltfParentNode, babylonScene);
                     }
-                    else
+                    else if (type == typeof(BabylonCamera))
+                    {
+                        GLTFCamera gltfCamera = ExportCamera(ref gltfNode, babylonNode as BabylonCamera, gltf, gltfParentNode);
+                    }
+                    else if (type == typeof(BabylonLight) || type.IsSubclassOf(typeof(BabylonLight)))
                     {
                         ExportLight(ref gltfNode, babylonNode as BabylonLight, gltf, gltfParentNode, babylonScene);
                     }
-                }
-                else
-                {
-                    RaiseError($"Node named {babylonNode.name} as no exporter", 1);
-                }
-
-                CheckCancelled();
-                if (gltfNode != null)
-                {
-                    // export its tag
-                    if (babylonNode.tag != null && babylonNode.tag != "")
+                    else
                     {
-                        if (gltfNode.extras == null)
-                        {
-                            gltfNode.extras = new Dictionary<string, object>();
-                        }
-                        gltfNode.extras["tag"] = babylonNode.tag;
+                        RaiseError($"Node named {babylonNode.name} as no exporter", 1);
                     }
 
-                    // ...export its children
-                    List<BabylonNode> babylonDescendants = getDescendants(babylonNode);
-                    babylonDescendants.ForEach(descendant => exportNodeRec(descendant, gltf, babylonScene, gltfNode));
+                    CheckCancelled();
+                    if (gltfNode != null)
+                    {
+                        // export its tag
+                        if (babylonNode.tag != null && babylonNode.tag != "")
+                        {
+                            if (gltfNode.extras == null)
+                            {
+                                gltfNode.extras = new Dictionary<string, object>();
+                            }
+                            gltfNode.extras["tag"] = babylonNode.tag;
+                        }
+
+                        // ...export its children
+                        List<BabylonNode> babylonDescendants = getDescendants(babylonNode);
+                        babylonDescendants.ForEach(descendant => exportNodeRec(descendant, gltf, babylonScene, gltfNode));
+                    }
                 }
-            }
+            } 
         }
 
         private List<BabylonNode> getDescendants(BabylonNode babylonNode)
